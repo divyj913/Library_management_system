@@ -1,13 +1,26 @@
-# library_management_system/database.py
+# Initial file setup for 'library_management_system'
+# Organizing provided code in modular format
+
+# Files expected:
+# - main.py
+# - book_management.py
+# - user_management.py (not provided, to be assumed)
+# - database.py
+
+# Begin writing from the provided code, clean up logical/structural errors as needed.
+
+# --- database.py ---
 import sqlite3
+import os
 
 class Database:
     def __init__(self, db_name):
+        db_exists = os.path.exists(db_name)
         self.conn = sqlite3.connect(db_name)
-        self.create_tables()
+        if not db_exists:
+            self.create_tables()
 
     def create_tables(self):
-        # Create books table
         self.conn.execute('''
             CREATE TABLE IF NOT EXISTS books (
                 isbn TEXT PRIMARY KEY,
@@ -15,12 +28,12 @@ class Database:
                 author TEXT NOT NULL,
                 genre TEXT,
                 publication_year TEXT,
-                is_available BOOLEAN DEFAULT TRUE,
-                current_user_email TEXT
+                total_copies INTEGER,
+                available_copies INTEGER,
+                is_available BOOLEAN DEFAULT TRUE
             )
         ''')
 
-        # Create users table
         self.conn.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 email TEXT PRIMARY KEY,
@@ -30,7 +43,6 @@ class Database:
             )
         ''')
 
-        # Create book transactions table
         self.conn.execute('''
             CREATE TABLE IF NOT EXISTS book_transactions (
                 transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,35 +54,36 @@ class Database:
                 FOREIGN KEY(user_email) REFERENCES users(email)
             )
         ''')
-        
+
         self.conn.commit()
 
     def insert_book(self, book_data):
         cursor = self.conn.cursor()
         cursor.execute('''
             INSERT INTO books 
-            (isbn, title, author, genre, publication_year, is_available) 
-            VALUES (?, ?, ?, ?, ?, ?)
+            (isbn, title, author, genre, publication_year, total_copies, available_copies, is_available) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             book_data['isbn'], 
             book_data['title'], 
             book_data['author'], 
             book_data['genre'], 
             book_data['publication_year'], 
-            book_data['is_available']
+            book_data['total_copies'],
+            book_data['available_copies'],
+            True
         ))
         self.conn.commit()
 
     def insert_user(self, user_data):
         cursor = self.conn.cursor()
         cursor.execute('''
-            INSERT INTO users 
-            (email, name, phone, address) 
+            INSERT INTO users (email, name, phone, address) 
             VALUES (?, ?, ?, ?)
         ''', (
-            user_data['email'], 
-            user_data['name'], 
-            user_data['phone'], 
+            user_data['email'],
+            user_data['name'],
+            user_data['phone'],
             user_data['address']
         ))
         self.conn.commit()
@@ -90,60 +103,46 @@ class Database:
     def find_book_by_isbn(self, isbn):
         cursor = self.conn.cursor()
         cursor.execute('SELECT * FROM books WHERE isbn = ?', (isbn,))
-        result = cursor.fetchone()
-        
-        if result:
+        row = cursor.fetchone()
+        if row:
             columns = [column[0] for column in cursor.description]
-            return dict(zip(columns, result))
+            return dict(zip(columns, row))
         return None
 
     def find_user_by_email(self, email):
         cursor = self.conn.cursor()
         cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
-        result = cursor.fetchone()
-        
-        if result:
+        row = cursor.fetchone()
+        if row:
             columns = [column[0] for column in cursor.description]
-            return dict(zip(columns, result))
+            return dict(zip(columns, row))
         return None
 
-    def issue_book(self, book_isbn, user_email):
+    def issue_book(self, isbn, email):
         cursor = self.conn.cursor()
-        
-        # Update book availability
         cursor.execute('''
-            UPDATE books 
-            SET is_available = FALSE, current_user_email = ? 
+            UPDATE books SET available_copies = available_copies - 1 
             WHERE isbn = ?
-        ''', (user_email, book_isbn))
-
-        # Record transaction
+        ''', (isbn,))
         cursor.execute('''
-            INSERT INTO book_transactions 
-            (book_isbn, user_email) 
+            INSERT INTO book_transactions (book_isbn, user_email)
             VALUES (?, ?)
-        ''', (book_isbn, user_email))
-
+        ''', (isbn, email))
         self.conn.commit()
 
-    def return_book(self, book_isbn):
+    def return_book(self, isbn):
         cursor = self.conn.cursor()
-        
-        # Update book availability
         cursor.execute('''
-            UPDATE books 
-            SET is_available = TRUE, current_user_email = NULL 
+            UPDATE books SET available_copies = available_copies + 1 
             WHERE isbn = ?
-        ''', (book_isbn,))
-
-        # Update transaction return date
+        ''', (isbn,))
         cursor.execute('''
-            UPDATE book_transactions 
-            SET return_date = CURRENT_TIMESTAMP 
+            UPDATE book_transactions SET return_date = CURRENT_TIMESTAMP 
             WHERE book_isbn = ? AND return_date IS NULL
-        ''', (book_isbn,))
-
+        ''', (isbn,))
         self.conn.commit()
 
-    def __del__(self):
-        self.conn.close()
+    def count_books(self):
+        cursor = self.conn.cursor()
+        cursor.execute('SELECT COUNT(*) FROM books')
+        return cursor.fetchone()[0]
