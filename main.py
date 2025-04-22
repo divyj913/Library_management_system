@@ -4,13 +4,17 @@ from tkinter import messagebox, simpledialog
 from book_management import BookManager
 from user_management import UserManager
 from database import Database
+from PIL import Image, ImageTk  # You'll need to install pillow: pip install pillow
 
 class LibraryManagementSystem:
     def __init__(self, root):
         self.root = root
         self.root.title("Library Management System")
-        self.root.geometry("1960x1080")
-
+        self.root.geometry("1200x800")
+        
+        # Set background color
+        self.root.configure(bg="#f0f4f8")
+        
         # Initialize database and managers
         self.db = Database("library.db")
         self.book_manager = BookManager(self.db)
@@ -23,31 +27,122 @@ class LibraryManagementSystem:
         for widget in self.root.winfo_children():
             widget.destroy()
 
+        # Create a header frame
+        header_frame = tk.Frame(self.root, bg="#2c3e50", height=100)
+        header_frame.pack(fill=tk.X)
+        
+        # Title with improved styling
         title_label = tk.Label(
-            self.root,
-            text="Library management system for gsv",
-            font=("Blanka", 24, "bold"),
-            fg="black",
+            header_frame,
+            text="GSV LIBRARY MANAGEMENT SYSTEM",
+            font=("Helvetica", 28, "bold"),
+            fg="white",
+            bg="#2c3e50",
+            pady=25
         )
-        title_label.pack(pady=20)
+        title_label.pack()
+        
+        # Main content area
+        content_frame = tk.Frame(self.root, bg="#f0f4f8")
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=50, pady=30)
+        
+        # Left side for buttons
+        button_frame = tk.Frame(content_frame, bg="#f0f4f8")
+        button_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=20)
+        
+        # Right side for decorative elements
+        info_frame = tk.Frame(content_frame, bg="#f0f4f8")
+        info_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=20)
+        
+        # Welcome message
+        welcome_label = tk.Label(
+            info_frame,
+            text="Welcome to GSV Library",
+            font=("Helvetica", 22, "bold"),
+            fg="#2c3e50",
+            bg="#f0f4f8",
+            justify=tk.LEFT
+        )
+        welcome_label.pack(anchor=tk.W, pady=(0, 20))
+        
+        # Information text
+        info_text = """
+        This system helps you manage your library efficiently.
+        You can add books and users, issue and return books,
+        and keep track of all library resources.
+        
+        Start by selecting an option from the menu.
+        """
+        
+        info_label = tk.Label(
+            info_frame,
+            text=info_text,
+            font=("Helvetica", 14),
+            fg="#34495e",
+            bg="#f0f4f8",
+            justify=tk.LEFT,
+            wraplength=400
+        )
+        info_label.pack(anchor=tk.W)
+        
+        # Section title for buttons
+        section_label = tk.Label(
+            button_frame,
+            text="Main Menu",
+            font=("Helvetica", 18, "bold"),
+            fg="#2c3e50",
+            bg="#f0f4f8"
+        )
+        section_label.pack(anchor=tk.W, pady=(0, 20))
 
-        menu_frame = tk.Frame(self.root, padx=20, pady=20)
-        menu_frame.pack(expand=True)
-
+        # Button definitions with icons and colors
         buttons = [
-            ("Add Book", self.open_add_book_window),
-            ("View Books", self.open_book_list_window),
-            ("Add User", self.open_add_user_window),
-            ("View Users", self.open_user_list_window),
-            ("Issue Book", self.issue_book),
-            ("Return Book", self.return_book),
+            ("Add Book", self.open_add_book_window, "#3498db", "#2980b9"),
+            ("View Books", self.open_book_list_window, "#2ecc71", "#27ae60"),
+            ("Add User", self.open_add_user_window, "#9b59b6", "#8e44ad"),
+            ("View Users", self.open_user_list_window, "#e74c3c", "#c0392b"),
+            ("Issue Book", self.issue_book, "#f39c12", "#d35400"),
+            ("Return Book", self.return_book, "#1abc9c", "#16a085"),
         ]
 
-        for text, command in buttons:
-            btn = tk.Button(menu_frame, text=text, command=command,
-                            width=20, height=2, font=("Arial", 12))
-            btn.pack(pady=10)
+        # Create styled buttons
+        for text, command, bg_color, active_bg in buttons:
+            btn_frame = tk.Frame(button_frame, bg="#f0f4f8")
+            btn_frame.pack(fill=tk.X, pady=8)
+            
+            btn = tk.Button(
+                btn_frame, 
+                text=text,
+                command=command,
+                font=("Helvetica", 14, "bold"),
+                bg=bg_color,
+                fg="white",
+                activebackground=active_bg,
+                activeforeground="white",
+                bd=0,
+                padx=20,
+                pady=12,
+                width=20,
+                cursor="hand2",
+                relief=tk.FLAT
+            )
+            btn.pack(fill=tk.X)
 
+        # Footer
+        footer_frame = tk.Frame(self.root, bg="#2c3e50", height=50)
+        footer_frame.pack(fill=tk.X, side=tk.BOTTOM)
+        
+        footer_text = tk.Label(
+            footer_frame,
+            text="© 2025 GSV Library Management System | All Rights Reserved",
+            font=("Helvetica", 10),
+            fg="white",
+            bg="#2c3e50",
+            pady=15
+        )
+        footer_text.pack()
+
+    # Your existing methods remain unchanged
     def open_add_book_window(self):
         add_book_window = tk.Toplevel(self.root)
         add_book_window.title("Add Book")
