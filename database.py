@@ -59,7 +59,7 @@ class Database:
             book_data['publication_year'], 
             book_data['total_copies'],
             book_data['available_copies'],
-            True
+            book_data.get('is_available', True)  # Default to True if not provided
         ))
         self.conn.commit()
 
@@ -90,12 +90,13 @@ class Database:
 
     def find_book_by_isbn(self, isbn):
         cursor = self.conn.cursor()
-        cursor.execute('SELECT * FROM books WHERE isbn = ?', (isbn,))
+        cursor.execute('SELECT *, available_copies > 0 as is_available FROM books WHERE isbn = ?', (isbn,))
         row = cursor.fetchone()
         if row:
             columns = [column[0] for column in cursor.description]
             return dict(zip(columns, row))
         return None
+
 
     def find_user_by_email(self, email):
         cursor = self.conn.cursor()
@@ -109,7 +110,9 @@ class Database:
     def issue_book(self, isbn, email):
         cursor = self.conn.cursor()
         cursor.execute('''
-            UPDATE books SET available_copies = available_copies - 1 
+            UPDATE books 
+            SET available_copies = available_copies - 1,
+                is_available = CASE WHEN available_copies - 1 > 0 THEN 1 ELSE 0 END
             WHERE isbn = ?
         ''', (isbn,))
         cursor.execute('''
@@ -121,7 +124,9 @@ class Database:
     def return_book(self, isbn):
         cursor = self.conn.cursor()
         cursor.execute('''
-            UPDATE books SET available_copies = available_copies + 1 
+            UPDATE books 
+            SET available_copies = available_copies + 1,
+                is_available = CASE WHEN available_copies + 1 > 0 THEN 1 ELSE 0 END
             WHERE isbn = ?
         ''', (isbn,))
         cursor.execute('''
@@ -129,6 +134,7 @@ class Database:
             WHERE book_isbn = ? AND return_date IS NULL
         ''', (isbn,))
         self.conn.commit()
+
 
     def count_books(self):
         cursor = self.conn.cursor()
