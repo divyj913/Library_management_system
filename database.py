@@ -1,15 +1,3 @@
-# Initial file setup for 'library_management_system'
-# Organizing provided code in modular format
-
-# Files expected:
-# - main.py
-# - book_management.py
-# - user_management.py (not provided, to be assumed)
-# - database.py
-
-# Begin writing from the provided code, clean up logical/structural errors as needed.
-
-# --- database.py ---
 import sqlite3
 import os
 
