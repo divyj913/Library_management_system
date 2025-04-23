@@ -22,7 +22,6 @@ class BookManager:
         return self.db.fetch_all_books()
 
     def issue_book(self, book_isbn, user_email):
-        # Check book availability
         book = self.db.find_book_by_isbn(book_isbn)
         user = self.db.find_user_by_email(user_email)
 
@@ -30,22 +29,19 @@ class BookManager:
             raise ValueError("Book not found")
         if not user:
             raise ValueError("User not found")
-        if not book['is_available']:
+        if book['available_copies'] <= 0:
             raise ValueError("Book is already issued")
 
-        # Update book status and record transaction
         self.db.issue_book(book_isbn, user_email)
         return "Book issued successfully"
 
     def return_book(self, book_isbn):
-        # Validate book return
         book = self.db.find_book_by_isbn(book_isbn)
 
         if not book:
             raise ValueError("Book not found")
-        if book['is_available']:
+        if book['available_copies'] >= book['total_copies']:
             raise ValueError("Book was not issued")
 
-        # Process book return
         self.db.return_book(book_isbn)
         return "Book returned successfully"
